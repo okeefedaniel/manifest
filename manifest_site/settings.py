@@ -246,6 +246,8 @@ MIGRATION_MODULES = {
 # Keel (DockLabs Shared Platform)
 # ---------------------------------------------------------------------------
 KEEL_PRODUCT_NAME = 'Manifest'
+KEEL_PRODUCT_ICON = 'bi-pen-fill'
+KEEL_PRODUCT_SUBTITLE = 'Document Signing Platform'
 KEEL_AUDIT_LOG_MODEL = 'signatures.AuditLog'
 KEEL_NOTIFICATION_MODEL = 'signatures.Notification'
 KEEL_NOTIFICATION_PREFERENCE_MODEL = 'signatures.NotificationPreference'
