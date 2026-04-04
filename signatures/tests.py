@@ -10,9 +10,12 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 try:
-    from core.models import Agency
+    from keel.accounts.models import Agency
 except ImportError:
-    Agency = None  # Standalone mode — no Agency model
+    try:
+        from core.models import Agency
+    except ImportError:
+        Agency = None  # Standalone mode — no Agency model
 
 TEST_PASSWORD = os.environ.get('TEST_PASSWORD', 'test' + 'pass123!')
 
@@ -43,16 +46,36 @@ TEST_STORAGES = {
 # ---------------------------------------------------------------------------
 
 def _agency(**kw):
+    if Agency is None:
+        return None  # Standalone mode — no Agency model
     defaults = {'name': 'Test Agency', 'abbreviation': kw.pop('abbreviation', 'TST')}
     defaults.update(kw)
     return Agency.objects.create(**defaults)
 
 
-def _user(username, role, agency=None, **kw):
-    return User.objects.create_user(
-        username=username, password=TEST_PASSWORD, email=f'{username}@example.com',
-        role=role, agency=agency, **kw,
+# Roles that map to staff (is_staff=True) in standalone mode
+_STAFF_ROLES = {
+    'system_admin', 'agency_admin', 'program_officer',
+    'fiscal_officer', 'federal_coordinator', 'reviewer',
+}
+
+
+def _user(username, role='', agency=None, **kw):
+    """Create a test user.
+
+    In standalone mode (default Django User), ``role`` and ``agency``
+    are not real model fields.  We set ``is_staff`` based on *role* so
+    that permission mixins behave correctly in tests.
+    """
+    is_staff = role in _STAFF_ROLES
+    # Only pass agency if the User model has an agency field
+    create_kw = dict(
+        username=username, password=TEST_PASSWORD,
+        email=f'{username}@example.com', is_staff=is_staff, **kw,
     )
+    if hasattr(User, 'agency'):
+        create_kw['agency'] = agency
+    return User.objects.create_user(**create_kw)
 
 
 def _sample_pdf():
