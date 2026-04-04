@@ -48,7 +48,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
+    'django.contrib.sites',
     # Keel (DockLabs shared platform)
+    'keel.accounts',
     'keel.core',
     'keel.security',
     'keel.notifications',
@@ -56,6 +58,12 @@ INSTALLED_APPS = [
     # Third-party
     'crispy_forms',
     'crispy_bootstrap5',
+    # Allauth (SSO / MFA)
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.microsoft',
+    'allauth.mfa',
     # Manifest
     'signatures.apps.SignaturesConfig',
 ]
@@ -63,15 +71,17 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'keel.security.middleware.SecurityHeadersMiddleware',
+    'keel.security.middleware.FailedLoginMonitor',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'keel.accounts.middleware.ProductAccessMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
     'keel.core.middleware.AuditMiddleware',
-    'keel.security.middleware.FailedLoginMonitor',
 ]
 
 ROOT_URLCONF = 'manifest_site.urls'
@@ -133,6 +143,8 @@ else:
         }
     }
 
+AUTH_USER_MODEL = 'keel_accounts.KeelUser'
+
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
 ]
@@ -160,9 +172,44 @@ MEDIA_ROOT = BASE_DIR / 'media'
 CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
 
-LOGIN_URL = '/accounts/login/'
+LOGIN_URL = '/auth/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+# ---------------------------------------------------------------------------
+# Allauth
+# ---------------------------------------------------------------------------
+SITE_ID = 1
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+ACCOUNT_LOGIN_METHODS = {'username', 'email'}
+ACCOUNT_EMAIL_VERIFICATION = 'optional'
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
+ACCOUNT_ADAPTER = 'keel.core.sso.KeelAccountAdapter'
+
+SOCIALACCOUNT_LOGIN_ON_GET = True
+
+_MSFT_TENANT = os.environ.get('MICROSOFT_TENANT_ID', 'common')
+SOCIALACCOUNT_PROVIDERS = {
+    'microsoft': {
+        'APP': {
+            'client_id': os.environ.get('MICROSOFT_CLIENT_ID', ''),
+            'secret': os.environ.get('MICROSOFT_CLIENT_SECRET', ''),
+        },
+        'SCOPE': ['openid', 'email', 'profile', 'User.Read'],
+        'AUTH_PARAMS': {'prompt': 'select_account'},
+        'TENANT': _MSFT_TENANT,
+    },
+}
+
+MFA_ADAPTER = 'allauth.mfa.adapter.DefaultMFAAdapter'
+MFA_SUPPORTED_TYPES = ['totp', 'webauthn', 'recovery_codes']
+MFA_TOTP_ISSUER = 'Manifest'
+MFA_PASSKEY_LOGIN_ENABLED = True
 
 # Email — Resend HTTP API for transactional emails (Railway blocks outbound SMTP)
 if DEBUG:
@@ -245,6 +292,7 @@ MIGRATION_MODULES = {
 # ---------------------------------------------------------------------------
 # Keel (DockLabs Shared Platform)
 # ---------------------------------------------------------------------------
+KEEL_GATE_ACCESS = True
 KEEL_PRODUCT_NAME = 'Manifest'
 KEEL_PRODUCT_ICON = 'bi-pen-fill'
 KEEL_PRODUCT_SUBTITLE = 'Document Signing Platform'
