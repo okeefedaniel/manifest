@@ -183,15 +183,14 @@
                     &copy; {% now "Y" %} DockLabs. {% trans "All rights reserved." %}
                 </p>
                 <p class="small mb-0">
-                    <a href="#" class="text-muted text-decoration-none me-3">{% trans "Privacy Policy" %}</a>
-                    <a href="#" class="text-muted text-decoration-none">{% trans "Terms of Service" %}</a>
+                    <a href="https://docklabs.ai/privacy.html" class="text-muted text-decoration-none me-3">{% trans "Privacy Policy" %}</a>
+                    <a href="https://docklabs.ai/terms.html" class="text-muted text-decoration-none">{% trans "Terms of Service" %}</a>
                 </p>
             </div>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{% static 'js/harbor.js' %}"></script>
     {% block extra_js %}{% endblock %}
 
     {% request_widget %}
