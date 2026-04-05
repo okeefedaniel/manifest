@@ -98,6 +98,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'signatures.context_processors.manifest_context',
                 'keel.core.context_processors.site_context',
+                'keel.core.context_processors.fleet_context',
             ],
         },
     },
@@ -293,6 +294,14 @@ MIGRATION_MODULES = {
 # Keel (DockLabs Shared Platform)
 # ---------------------------------------------------------------------------
 KEEL_GATE_ACCESS = True
+KEEL_PRODUCT_CODE = 'manifest'
+KEEL_FLEET_PRODUCTS = [
+    {'name': 'Helm', 'label': 'Helm', 'code': 'helm', 'url': '/'},
+    {'name': 'Beacon', 'label': 'Beacon', 'code': 'beacon', 'url': '/'},
+    {'name': 'Harbor', 'label': 'Harbor', 'code': 'harbor', 'url': '/'},
+    {'name': 'Bounty', 'label': 'Bounty', 'code': 'bounty', 'url': '/'},
+    {'name': 'Lookout', 'label': 'Lookout', 'code': 'lookout', 'url': '/'},
+]
 KEEL_PRODUCT_NAME = 'Manifest'
 KEEL_PRODUCT_ICON = 'bi-pen-fill'
 KEEL_PRODUCT_SUBTITLE = 'Document Signing Platform'
