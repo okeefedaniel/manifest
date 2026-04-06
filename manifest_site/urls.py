@@ -18,7 +18,7 @@ urlpatterns = [
 
     # Auth
     path('auth/login/', allauth_views.LoginView.as_view(
-        template_name='manifest/login.html',
+        template_name='account/login.html',
     ), name='login'),
     path('auth/logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('accounts/', include('allauth.urls')),
