@@ -334,11 +334,15 @@ MIGRATION_MODULES = {
 KEEL_GATE_ACCESS = True
 KEEL_PRODUCT_CODE = 'manifest'
 KEEL_FLEET_PRODUCTS = [
-    {'name': 'Helm', 'label': 'Helm', 'code': 'helm', 'url': '/'},
-    {'name': 'Beacon', 'label': 'Beacon', 'code': 'beacon', 'url': '/'},
-    {'name': 'Harbor', 'label': 'Harbor', 'code': 'harbor', 'url': '/'},
-    {'name': 'Bounty', 'label': 'Bounty', 'code': 'bounty', 'url': '/'},
-    {'name': 'Lookout', 'label': 'Lookout', 'code': 'lookout', 'url': '/'},
+    {'name': 'Helm', 'label': 'Helm', 'code': 'helm', 'url': 'https://helm.docklabs.ai/'},
+    {'name': 'Harbor', 'label': 'Harbor', 'code': 'harbor', 'url': 'https://harbor.docklabs.ai/'},
+    {'name': 'Beacon', 'label': 'Beacon', 'code': 'beacon', 'url': 'https://beacon.docklabs.ai/'},
+    {'name': 'Lookout', 'label': 'Lookout', 'code': 'lookout', 'url': 'https://lookout.docklabs.ai/'},
+    {'name': 'Bounty', 'label': 'Bounty', 'code': 'bounty', 'url': 'https://bounty.docklabs.ai/'},
+    {'name': 'Admiralty', 'label': 'Admiralty', 'code': 'admiralty', 'url': 'https://admiralty.docklabs.ai/'},
+    {'name': 'Purser', 'label': 'Purser', 'code': 'purser', 'url': 'https://purser.docklabs.ai/'},
+    {'name': 'Manifest', 'label': 'Manifest', 'code': 'manifest', 'url': 'https://manifest.docklabs.ai/'},
+    {'name': 'Yeoman', 'label': 'Yeoman', 'code': 'yeoman', 'url': 'https://yeoman.docklabs.ai/'},
 ]
 KEEL_PRODUCT_NAME = 'Manifest'
 KEEL_PRODUCT_ICON = 'bi-pen-fill'
