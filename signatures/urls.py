@@ -1,13 +1,41 @@
 from django.urls import path
 from django.views.generic import RedirectView
 
+from keel.core.views import LandingView
+
 from . import views
 
 app_name = 'signatures'
 
 urlpatterns = [
-    # ---- Root redirect ----
-    path('', RedirectView.as_view(pattern_name='signatures:packet-list'), name='index'),
+    # ---- Root: public landing for guests, redirect signed-in users to packet list ----
+    path('', LandingView.as_view(
+        template_name='manifest/landing.html',
+        authenticated_redirect='signatures:packet-list',
+        stats=[
+            {'value': 'E-Sign', 'label': 'Compliant'},
+            {'value': 'Multi-step', 'label': 'Workflows'},
+            {'value': 'Audit', 'label': 'Trail'},
+            {'value': 'Mobile', 'label': 'Friendly'},
+        ],
+        features=[
+            {'icon': 'bi-pen', 'title': 'Document Signing',
+             'description': 'Configurable signing flows with multi-party workflows, sequential or parallel routing, and full audit trails.',
+             'color': 'blue'},
+            {'icon': 'bi-shield-lock', 'title': 'E-Signature Compliance',
+             'description': 'ESIGN Act and UETA compliant signatures with cryptographic verification and tamper-evident audit logs.',
+             'color': 'teal'},
+            {'icon': 'bi-collection', 'title': 'Template Library',
+             'description': 'Build reusable signing templates for grant agreements, MOUs, and contracts.',
+             'color': 'yellow'},
+        ],
+        steps=[
+            {'title': 'Create Template', 'description': 'Define a signing flow with roles, steps, and document placements.'},
+            {'title': 'Initiate Packet', 'description': 'Send a packet to signers via email with a secure signing link.'},
+            {'title': 'Collect Signatures', 'description': 'Signers complete each step in order — Manifest tracks progress.'},
+            {'title': 'Archive', 'description': 'Completed packets are sealed with a full audit trail and FOIA-exportable.'},
+        ],
+    ), name='index'),
 
     # ---- Admin: Flow configuration ----
     path('flows/', views.FlowListView.as_view(), name='flow-list'),

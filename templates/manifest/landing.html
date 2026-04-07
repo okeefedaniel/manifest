@@ -1,0 +1,22 @@
+{% extends "keel/layouts/landing.html" %}
+{% load static %}
+
+{% block landing_hero_description %}
+ESIGN-compliant document signing for state agencies. Build reusable signing
+templates for grant agreements, MOUs, and contracts — collect signatures in
+order with full audit trails and tamper-evident verification.
+{% endblock %}
+
+{% block dashboard_url %}{% url 'signatures:packet-list' %}{% endblock %}
+
+{% block landing_stats %}
+{% include "keel/landing/_stats_bar.html" with stats=landing_stats %}
+{% endblock %}
+
+{% block landing_features %}
+{% include "keel/landing/_features.html" with title="Built for Legal Compliance" features=landing_features %}
+{% endblock %}
+
+{% block landing_how_it_works %}
+{% include "keel/landing/_how_it_works.html" with steps=landing_steps %}
+{% endblock %}
