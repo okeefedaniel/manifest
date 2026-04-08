@@ -30,6 +30,11 @@ urlpatterns = [
         name='microsoft_login',
     ),
 
+    # Canonical suite-wide post-login URL. Aliases the real Manifest
+    # dashboard (the packet list) so every DockLabs product lands at
+    # /dashboard/ after login.
+    path('dashboard/', RedirectView.as_view(url='/packets/', permanent=False), name='dashboard_alias'),
+
     path('demo-login/', demo_login_view, name='demo_login'),
     path('notifications/', include('keel.notifications.urls')),
     path('', include('signatures.urls')),

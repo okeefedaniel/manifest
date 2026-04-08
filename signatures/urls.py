@@ -11,7 +11,7 @@ urlpatterns = [
     # ---- Root: public landing for guests, redirect signed-in users to packet list ----
     path('', LandingView.as_view(
         template_name='manifest/landing.html',
-        authenticated_redirect='signatures:packet-list',
+        authenticated_redirect='dashboard_alias',
         stats=[
             {'value': 'E-Sign', 'label': 'Compliant'},
             {'value': 'Multi-step', 'label': 'Workflows'},
