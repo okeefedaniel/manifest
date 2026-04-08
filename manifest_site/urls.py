@@ -9,6 +9,7 @@ from django.views.generic import RedirectView
 from allauth.account import views as allauth_views
 from keel.core.views import health_check, robots_txt
 from keel.core.demo import demo_login_view
+from signatures.views import PacketListView
 
 
 urlpatterns = [
@@ -30,10 +31,12 @@ urlpatterns = [
         name='microsoft_login',
     ),
 
-    # Canonical suite-wide post-login URL. Aliases the real Manifest
-    # dashboard (the packet list) so every DockLabs product lands at
-    # /dashboard/ after login.
-    path('dashboard/', RedirectView.as_view(url='/packets/', permanent=False), name='dashboard_alias'),
+    # Canonical suite-wide post-login URL. Mounts the real Manifest
+    # dashboard view (PacketListView) directly so the URL bar stays at
+    # /dashboard/ instead of 302'ing to /packets/. The legacy
+    # signatures:packet-list URL still resolves to /packets/ for any
+    # reverse() calls in templates.
+    path('dashboard/', PacketListView.as_view(), name='dashboard_alias'),
 
     path('demo-login/', demo_login_view, name='demo_login'),
     path('notifications/', include('keel.notifications.urls')),
