@@ -380,6 +380,18 @@ class PacketListView(AgencyStaffRequiredMixin, SortableListMixin, ListView):
             qs = qs.filter(status=status)
         return self.apply_sorting(qs)
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        # Dashboard summary cards — counts by status so the user can
+        # jump into a filtered packet view.
+        base_qs = SigningPacket.objects.all()
+        ctx['stat_total'] = base_qs.count()
+        ctx['stat_in_progress'] = base_qs.filter(status='in_progress').count()
+        ctx['stat_pending'] = base_qs.filter(status='pending').count()
+        ctx['stat_completed'] = base_qs.filter(status='completed').count()
+        ctx['active_status_filter'] = self.request.GET.get('status', '')
+        return ctx
+
 
 class PacketInitiateView(AgencyStaffRequiredMixin, View):
     template_name = 'signatures/packet_initiate.html'
