@@ -1,14 +1,14 @@
 """Manifest standalone URL configuration."""
 from django.contrib import admin
-from django.contrib.auth import views as auth_views
+from django.contrib.auth.views import LoginView
 from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
 
-from allauth.account import views as allauth_views
 from keel.core.views import health_check, robots_txt, SuiteLogoutView
 from keel.core.demo import demo_login_view
+from keel.accounts.forms import LoginForm
 from signatures.views import PacketListView
 
 
@@ -17,11 +17,14 @@ urlpatterns = [
     path('health/', health_check),
     path('admin/', admin.site.urls),
 
-    # Auth
-    path('auth/login/', allauth_views.LoginView.as_view(
+    # Custom login/logout views using the shared keel LoginForm so the
+    # input fields render with Bootstrap styling. Mounted before the
+    # allauth include so they shadow allauth's bare LoginView.
+    path('accounts/login/', LoginView.as_view(
         template_name='account/login.html',
-    ), name='login'),
-    path('auth/logout/', SuiteLogoutView.as_view(), name='logout'),
+        authentication_form=LoginForm,
+    ), name='account_login'),
+    path('accounts/logout/', SuiteLogoutView.as_view(), name='account_logout'),
     path('accounts/', include('allauth.urls')),
 
     # Convenience named URL for the "Sign in with Microsoft" button
