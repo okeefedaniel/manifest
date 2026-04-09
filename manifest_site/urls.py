@@ -9,6 +9,7 @@ from django.views.generic import RedirectView
 from keel.core.views import health_check, robots_txt, SuiteLogoutView
 from keel.core.demo import demo_login_view
 from keel.accounts.forms import LoginForm
+from keel.core.search_views import search_view
 from signatures.views import PacketListView
 
 
@@ -44,6 +45,7 @@ urlpatterns = [
     path('demo-login/', demo_login_view, name='demo_login'),
     path('notifications/', include('keel.notifications.urls')),
     path('', include('signatures.urls')),
+    path('search/', search_view, name='search'),
     path('keel/requests/', include('keel.requests.urls')),
     path('keel/', include('keel.accounts.urls')),
     path('keel/', include('keel.core.foia_urls')),
