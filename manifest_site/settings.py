@@ -344,4 +344,5 @@ KEEL_PRODUCT_SUBTITLE = 'Document Signing Platform'
 KEEL_AUDIT_LOG_MODEL = 'signatures.AuditLog'
 KEEL_NOTIFICATION_MODEL = 'signatures.Notification'
 KEEL_NOTIFICATION_PREFERENCE_MODEL = 'signatures.NotificationPreference'
+HELM_FEED_API_KEY = os.environ.get('HELM_FEED_API_KEY', '')
 KEEL_CSP_POLICY = {}  # Start permissive, tighten later

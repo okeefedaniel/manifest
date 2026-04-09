@@ -10,6 +10,7 @@ from keel.core.views import health_check, robots_txt, SuiteLogoutView
 from keel.core.demo import demo_login_view
 from keel.accounts.forms import LoginForm
 from keel.core.search_views import search_view
+from signatures.helm_feed import manifest_helm_feed
 from signatures.views import PacketListView
 
 
@@ -43,6 +44,8 @@ urlpatterns = [
     path('dashboard/', PacketListView.as_view(), name='dashboard_alias'),
 
     path('demo-login/', demo_login_view, name='demo_login'),
+    # Helm executive dashboard feed
+    path('api/v1/helm-feed/', manifest_helm_feed, name='helm-feed'),
     path('notifications/', include('keel.notifications.urls')),
     path('', include('signatures.urls')),
     path('search/', search_view, name='search'),
