@@ -106,6 +106,12 @@ def main():
     except Exception as e:
         log(f"  WARNING: Could not configure Site: {e}")
 
+    # Seed demo data when DEMO_MODE is enabled
+    if os.environ.get('DEMO_MODE', 'False').lower() in ('true', '1', 'yes'):
+        log("=== Seeding demo data ===")
+        run(f"{manage} seed_keel_users")
+        run(f"{manage} seed_demo --force")
+
     log("=== Collecting static files ===")
     run(f"{manage} collectstatic --noinput")
 
