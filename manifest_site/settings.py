@@ -101,6 +101,7 @@ TEMPLATES = [
                 'signatures.context_processors.manifest_context',
                 'keel.core.context_processors.site_context',
                 'keel.core.context_processors.fleet_context',
+                'keel.core.context_processors.breadcrumb_context',
             ],
         },
     },
