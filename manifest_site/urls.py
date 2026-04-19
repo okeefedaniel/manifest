@@ -6,7 +6,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView, TemplateView
 
-from keel.core.views import health_check, robots_txt, SuiteLogoutView
+from keel.core.views import health_check, robots_txt, favicon_view, SuiteLogoutView
 from keel.core.demo import demo_login_view
 from keel.accounts.forms import LoginForm
 from keel.core.search_views import search_view
@@ -18,6 +18,7 @@ urlpatterns = [
     # Support (shared keel page — linked from 500.html)
     path('support/', TemplateView.as_view(template_name='keel/support.html'), name='support'),
     path('robots.txt', robots_txt, name='robots_txt'),
+    path('favicon.ico', favicon_view, name='favicon'),
     path('health/', health_check),
     path('admin/', admin.site.urls),
 
