@@ -59,11 +59,30 @@ def main():
                 cur.execute("SELECT count(*) FROM django_migrations")
                 total = cur.fetchone()[0]
                 if total > 0:
+                    # DELETE FROM django_migrations + fake-migrate + real-migrate is
+                    # destructive: a crash between steps leaves the DB in a state
+                    # Django cannot recover automatically. Require explicit opt-in.
+                    if os.environ.get('MANIFEST_ALLOW_MIGRATION_RESET') != '1':
+                        log(
+                            "  keel_accounts not yet applied but migrations exist; "
+                            "refusing to wipe django_migrations without "
+                            "MANIFEST_ALLOW_MIGRATION_RESET=1 — exiting."
+                        )
+                        sys.exit(1)
                     log(f"  keel_accounts not yet applied but {total} other migration(s) exist")
                     log("  Will use fake+real strategy to fix consistency")
                     keel_needs_real_migrate = True
-                    # Wipe django_migrations so Django doesn't hit the consistency check
-                    cur.execute("DELETE FROM django_migrations")
+                    # Wrap the wipe in a transaction so a failure mid-flight
+                    # doesn't leave django_migrations half-cleared.
+                    conn.autocommit = False
+                    try:
+                        cur.execute("DELETE FROM django_migrations")
+                        conn.commit()
+                    except Exception:
+                        conn.rollback()
+                        raise
+                    finally:
+                        conn.autocommit = True
                     log("  Cleared django_migrations table")
             else:
                 log("  No inconsistency found")

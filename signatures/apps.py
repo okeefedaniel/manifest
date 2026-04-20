@@ -9,6 +9,25 @@ class SignaturesConfig(AppConfig):
 
     def ready(self):
         self._register_notification_types()
+        self._register_audited_models()
+
+    def _register_audited_models(self):
+        try:
+            from keel.core.audit_signals import register_audited_model, connect_audit_signals
+        except ImportError:
+            return
+
+        register_audited_model('signatures.SignatureFlow', 'Signature Flow')
+        register_audited_model('signatures.SignatureFlowStep', 'Signature Flow Step')
+        register_audited_model('signatures.SignatureRequest', 'Signature Request')
+        register_audited_model('signatures.SignatureRole', 'Signature Role')
+        register_audited_model('signatures.SigningPacket', 'Signing Packet')
+        register_audited_model('signatures.SigningStep', 'Signing Step')
+        register_audited_model('signatures.SignaturePlacement', 'Signature Placement')
+        register_audited_model('signatures.UserSignature', 'User Signature')
+        register_audited_model('signatures.SignatureDocument', 'Signature Document')
+
+        connect_audit_signals()
 
     def _register_notification_types(self):
         try:
