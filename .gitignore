@@ -11,3 +11,6 @@ media/
 .env
 *.log
 .DS_Store
+
+# Claude Code runtime state
+.claude/*.lock
