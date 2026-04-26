@@ -13,7 +13,7 @@ def log(msg):
 
 def run(cmd, fatal=False):
     log(f"Running: {cmd}")
-    result = subprocess.run(cmd, shell=True, stdout=sys.stdout, stderr=sys.stderr)
+    result = subprocess.run(cmd, shell=True, stdout=sys.stdout, stderr=sys.stderr)  # nosec B602 — internal boot script with hardcoded commands, no user input
     if result.returncode != 0:
         log(f"Command exited with code {result.returncode}: {cmd}")
         if fatal:
