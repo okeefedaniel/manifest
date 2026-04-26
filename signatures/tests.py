@@ -814,3 +814,159 @@ class URLResolutionTest(TestCase):
         step_id = uuid.uuid4()
         url = reverse('signatures:sign', kwargs={'step_id': step_id})
         self.assertIn(str(step_id), url)
+
+
+# ===========================================================================
+# Helm inbox endpoint tests
+# ===========================================================================
+
+@override_settings(HELM_FEED_API_KEY='test-helm-feed-key', DEMO_MODE=False)
+class HelmFeedInboxTest(TestCase):
+    """Per-user inbox endpoint at /api/v1/helm-feed/inbox/."""
+
+    INBOX_URL = '/api/v1/helm-feed/inbox/'
+    AUTH = 'Bearer test-helm-feed-key'
+
+    def setUp(self):
+        from allauth.socialaccount.models import SocialAccount
+        from django.core.cache import cache
+        cache.clear()  # rate limit + per-user cache state isolation between tests
+        self.agency = _agency()
+        self.admin = _user('admin', 'system_admin', self.agency)
+        # Build flow inline (the shared helper passes a stale grant_program kwarg).
+        self.flow = SignatureFlow.objects.create(
+            name='Inbox Test Flow',
+            description='Inline-built flow for inbox tests',
+            is_active=True,
+            created_by=self.admin,
+        )
+        self.steps = [
+            SignatureFlowStep.objects.create(
+                flow=self.flow,
+                order=i,
+                label=f'Step {i}',
+                assignment_type=SignatureFlowStep.AssignmentType.ROLE,
+                assigned_role='program_officer',
+                is_required=True,
+            )
+            for i in (1, 2)
+        ]
+        self.signer1 = _user('signer1', 'program_officer', self.agency)
+        self.signer2 = _user('signer2', 'program_officer', self.agency)
+        SocialAccount.objects.create(user=self.signer1, provider='keel', uid='sub-signer1')
+        SocialAccount.objects.create(user=self.signer2, provider='keel', uid='sub-signer2')
+
+    def _initiate(self, title='Pilot packet', signers=None):
+        # _notify_signer_active lives in keel.signatures.services after the
+        # services-layer extraction (keel CLAUDE.md, phase (b) of the signing
+        # workflow consolidation).
+        with patch('keel.signatures.services._notify_signer_active'):
+            return services.initiate_packet(
+                flow=self.flow,
+                title=title,
+                initiated_by=self.admin,
+                signer_assignments={
+                    self.steps[0].pk: (signers or [self.signer1, self.signer2])[0],
+                    self.steps[1].pk: (signers or [self.signer1, self.signer2])[1],
+                },
+            )
+
+    def test_missing_auth_header_returns_401(self):
+        resp = self.client.get(self.INBOX_URL + '?user_sub=sub-signer1')
+        self.assertEqual(resp.status_code, 401)
+
+    def test_wrong_bearer_returns_401(self):
+        resp = self.client.get(
+            self.INBOX_URL + '?user_sub=sub-signer1',
+            HTTP_AUTHORIZATION='Bearer not-the-key',
+        )
+        self.assertEqual(resp.status_code, 401)
+
+    @override_settings(HELM_FEED_API_KEY='')
+    def test_unconfigured_returns_503(self):
+        resp = self.client.get(
+            self.INBOX_URL + '?user_sub=sub-signer1',
+            HTTP_AUTHORIZATION=self.AUTH,
+        )
+        self.assertEqual(resp.status_code, 503)
+
+    def test_missing_user_sub_returns_400(self):
+        resp = self.client.get(self.INBOX_URL, HTTP_AUTHORIZATION=self.AUTH)
+        self.assertEqual(resp.status_code, 400)
+
+    def test_unknown_sub_returns_empty_inbox(self):
+        resp = self.client.get(
+            self.INBOX_URL + '?user_sub=unknown-sub',
+            HTTP_AUTHORIZATION=self.AUTH,
+        )
+        self.assertEqual(resp.status_code, 200)
+        body = resp.json()
+        self.assertEqual(body['items'], [])
+        self.assertEqual(body['unread_notifications'], [])
+        self.assertEqual(body['user_sub'], 'unknown-sub')
+
+    def test_active_step_appears_in_inbox(self):
+        packet = self._initiate()
+        resp = self.client.get(
+            self.INBOX_URL + '?user_sub=sub-signer1',
+            HTTP_AUTHORIZATION=self.AUTH,
+        )
+        self.assertEqual(resp.status_code, 200)
+        body = resp.json()
+        self.assertEqual(len(body['items']), 1)
+        item = body['items'][0]
+        self.assertEqual(item['type'], 'signature')
+        self.assertIn(packet.title, item['title'])
+        self.assertEqual(item['priority'], 'high')
+
+    def test_pending_step_not_in_inbox(self):
+        # signer2 owns the second (PENDING) step until signer1 signs theirs
+        self._initiate()
+        resp = self.client.get(
+            self.INBOX_URL + '?user_sub=sub-signer2',
+            HTTP_AUTHORIZATION=self.AUTH,
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()['items'], [])
+
+    def test_inbox_isolates_users(self):
+        self._initiate()
+        from django.core.cache import cache
+        cache.clear()  # avoid the per-path cache returning signer1's payload to signer2
+        r1 = self.client.get(
+            self.INBOX_URL + '?user_sub=sub-signer1',
+            HTTP_AUTHORIZATION=self.AUTH,
+        )
+        r2 = self.client.get(
+            self.INBOX_URL + '?user_sub=sub-signer2',
+            HTTP_AUTHORIZATION=self.AUTH,
+        )
+        self.assertEqual(len(r1.json()['items']), 1)
+        self.assertEqual(len(r2.json()['items']), 0)
+        self.assertNotEqual(r1.json()['user_sub'], r2.json()['user_sub'])
+
+    def test_inbox_excludes_completed_packet(self):
+        packet = self._initiate()
+        packet.status = SigningPacket.Status.COMPLETED
+        packet.save(update_fields=['status'])
+        resp = self.client.get(
+            self.INBOX_URL + '?user_sub=sub-signer1',
+            HTTP_AUTHORIZATION=self.AUTH,
+        )
+        self.assertEqual(resp.json()['items'], [])
+
+    def test_per_user_cache_keys_dont_leak(self):
+        """Two requests with different user_subs must not share cached payload."""
+        self._initiate()
+        # First call populates cache for sub-signer1
+        r1 = self.client.get(
+            self.INBOX_URL + '?user_sub=sub-signer1',
+            HTTP_AUTHORIZATION=self.AUTH,
+        )
+        # Second call with a DIFFERENT sub must NOT return signer1's cached items
+        r2 = self.client.get(
+            self.INBOX_URL + '?user_sub=sub-signer2',
+            HTTP_AUTHORIZATION=self.AUTH,
+        )
+        self.assertEqual(len(r1.json()['items']), 1)
+        self.assertEqual(len(r2.json()['items']), 0)

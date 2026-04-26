@@ -11,6 +11,7 @@ from keel.core.demo import demo_login_view
 from keel.accounts.forms import LoginForm
 from keel.core.search_views import search_view
 from signatures.helm_feed import manifest_helm_feed
+from signatures.helm_inbox import manifest_helm_feed_inbox
 from signatures.views import PacketListView
 
 
@@ -49,6 +50,7 @@ urlpatterns = [
     path('demo-login/', demo_login_view, name='demo_login'),
     # Helm executive dashboard feed
     path('api/v1/helm-feed/', manifest_helm_feed, name='helm-feed'),
+    path('api/v1/helm-feed/inbox/', manifest_helm_feed_inbox, name='helm-feed-inbox'),
     path('notifications/', include('keel.notifications.urls')),
     path('', include('signatures.urls')),
     path('search/', search_view, name='search'),
