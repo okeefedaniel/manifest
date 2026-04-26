@@ -66,6 +66,10 @@ def _user(username, role='', agency=None, **kw):
     In standalone mode (default Django User), ``role`` and ``agency``
     are not real model fields.  We set ``is_staff`` based on *role* so
     that permission mixins behave correctly in tests.
+
+    Also grants ProductAccess for the configured KEEL_PRODUCT_NAME so
+    ProductAccessMiddleware (KEEL_GATE_ACCESS=True) doesn't 403 the
+    user out of every gated view.
     """
     is_staff = role in _STAFF_ROLES
     # Only pass agency if the User model has an agency field
@@ -75,7 +79,29 @@ def _user(username, role='', agency=None, **kw):
     )
     if hasattr(User, 'agency'):
         create_kw['agency'] = agency
-    return User.objects.create_user(**create_kw)
+    user = User.objects.create_user(**create_kw)
+    _grant_product_access(user, role)
+    return user
+
+
+def _grant_product_access(user, role):
+    """Grant the test user ProductAccess for the configured product.
+
+    No-op when keel.accounts isn't installed (pure-standalone mode).
+    """
+    try:
+        from django.conf import settings
+        from keel.accounts.models import ProductAccess
+    except ImportError:
+        return
+    product = getattr(settings, 'KEEL_PRODUCT_NAME', '').lower()
+    if not product:
+        return
+    ProductAccess.objects.get_or_create(
+        user=user,
+        product=product,
+        defaults={'role': role or 'member', 'is_active': True},
+    )
 
 
 def _sample_pdf():
@@ -102,7 +128,6 @@ def _create_flow_with_steps(admin, grant_program=None, step_count=3):
     flow = SignatureFlow.objects.create(
         name='Test Signing Flow',
         description='A test signing flow',
-        grant_program=grant_program,
         is_active=True,
         created_by=admin,
     )
@@ -175,7 +200,7 @@ class SigningPacketModelTest(TestCase):
         self.assertEqual(str(packet), 'Test Packet (Draft)')
         self.assertEqual(packet.status, 'draft')
 
-    @patch('signatures.services._notify_signer_active')
+    @patch('keel.signatures.services._notify_signer_active')
     def test_packet_progress(self, mock_notify):
         signer_assignments = {
             s.pk: self.signers[i] for i, s in enumerate(self.steps)
@@ -190,7 +215,7 @@ class SigningPacketModelTest(TestCase):
         self.assertEqual(total, 3)
         self.assertEqual(signed, 0)
 
-    @patch('signatures.services._notify_signer_active')
+    @patch('keel.signatures.services._notify_signer_active')
     def test_current_step(self, mock_notify):
         signer_assignments = {
             s.pk: self.signers[i] for i, s in enumerate(self.steps)
@@ -237,7 +262,7 @@ class ServiceInitiatePacketTest(TestCase):
             for i in range(3)
         ]
 
-    @patch('signatures.services._notify_signer_active')
+    @patch('keel.signatures.services._notify_signer_active')
     def test_initiate_packet(self, mock_notify):
         signer_assignments = {
             s.pk: self.signers[i] for i, s in enumerate(self.steps)
@@ -281,8 +306,8 @@ class ServiceCompleteStepTest(TestCase):
         self.signer1 = _user('signer1', 'program_officer', self.agency)
         self.signer2 = _user('signer2', 'program_officer', self.agency)
 
-    @patch('signatures.services._notify_signer_active')
-    @patch('signatures.services._notify_packet_completed')
+    @patch('keel.signatures.services._notify_signer_active')
+    @patch('keel.signatures.services._notify_packet_completed')
     @patch('signatures.services.generate_signed_pdf')
     def test_complete_step_advances(self, mock_pdf, mock_completed, mock_active):
         signer_assignments = {
@@ -310,8 +335,8 @@ class ServiceCompleteStepTest(TestCase):
         packet.refresh_from_db()
         self.assertEqual(packet.status, SigningPacket.Status.IN_PROGRESS)
 
-    @patch('signatures.services._notify_signer_active')
-    @patch('signatures.services._notify_packet_completed')
+    @patch('keel.signatures.services._notify_signer_active')
+    @patch('keel.signatures.services._notify_packet_completed')
     @patch('signatures.services.generate_signed_pdf')
     def test_complete_all_steps_completes_packet(self, mock_pdf, mock_completed, mock_active):
         signer_assignments = {
@@ -345,8 +370,8 @@ class ServiceDeclineStepTest(TestCase):
         self.signer1 = _user('signer1', 'program_officer', self.agency)
         self.signer2 = _user('signer2', 'program_officer', self.agency)
 
-    @patch('signatures.services._notify_signer_active')
-    @patch('signatures.services._notify_packet_declined')
+    @patch('keel.signatures.services._notify_signer_active')
+    @patch('keel.signatures.services._notify_packet_declined')
     def test_decline_step(self, mock_declined, mock_active):
         signer_assignments = {
             self.steps[0].pk: self.signer1,
@@ -379,7 +404,7 @@ class ServiceCancelPacketTest(TestCase):
         self.signer1 = _user('signer1', 'program_officer', self.agency)
         self.signer2 = _user('signer2', 'program_officer', self.agency)
 
-    @patch('signatures.services._notify_signer_active')
+    @patch('keel.signatures.services._notify_signer_active')
     def test_cancel_packet(self, mock_active):
         signer_assignments = {
             self.steps[0].pk: self.signer1,
@@ -590,7 +615,7 @@ class SigningViewTest(TestCase):
         self.other_user = _user('other', 'fiscal_officer', self.agency)
         self.flow, self.steps = _create_flow_with_steps(self.admin, step_count=1)
 
-    @patch('signatures.services._notify_signer_active')
+    @patch('keel.signatures.services._notify_signer_active')
     def _create_active_packet(self, mock_notify):
         return services.initiate_packet(
             flow=self.flow,
@@ -613,8 +638,8 @@ class SigningViewTest(TestCase):
         resp = self.client.get(reverse('signatures:sign', kwargs={'step_id': step.pk}))
         self.assertEqual(resp.status_code, 302)
 
-    @patch('signatures.services._notify_signer_active')
-    @patch('signatures.services._notify_packet_completed')
+    @patch('keel.signatures.services._notify_signer_active')
+    @patch('keel.signatures.services._notify_packet_completed')
     @patch('signatures.services.generate_signed_pdf')
     def test_sign_complete_typed(self, mock_pdf, mock_completed, mock_active):
         packet = self._create_active_packet()
@@ -631,8 +656,8 @@ class SigningViewTest(TestCase):
         step.refresh_from_db()
         self.assertEqual(step.status, SigningStep.Status.SIGNED)
 
-    @patch('signatures.services._notify_signer_active')
-    @patch('signatures.services._notify_packet_declined')
+    @patch('keel.signatures.services._notify_signer_active')
+    @patch('keel.signatures.services._notify_packet_declined')
     def test_sign_decline(self, mock_declined, mock_active):
         packet = self._create_active_packet()
         step = packet.steps.first()
@@ -669,18 +694,20 @@ class PacketViewTest(TestCase):
         resp = self.client.get(reverse('signatures:packet-list'))
         self.assertEqual(resp.status_code, 200)
 
-    @patch('signatures.services._notify_signer_active')
+    @patch('keel.signatures.services._notify_signer_active')
     def test_packet_detail(self, mock_notify):
         signer = _user('signer', 'program_officer', self.agency)
         packet = services.initiate_packet(
             flow=self.flow, title='Detail Test', initiated_by=self.admin,
             signer_assignments={self.steps[0].pk: signer},
         )
-        self.client.force_login(self.officer)
+        # Detail view is scoped to initiator/signer (#110). Log in as the
+        # initiator so the queryset includes this packet.
+        self.client.force_login(self.admin)
         resp = self.client.get(reverse('signatures:packet-detail', kwargs={'pk': packet.pk}))
         self.assertEqual(resp.status_code, 200)
 
-    @patch('signatures.services._notify_signer_active')
+    @patch('keel.signatures.services._notify_signer_active')
     def test_packet_cancel(self, mock_notify):
         signer = _user('signer', 'program_officer', self.agency)
         packet = services.initiate_packet(
@@ -696,7 +723,7 @@ class PacketViewTest(TestCase):
         packet.refresh_from_db()
         self.assertEqual(packet.status, SigningPacket.Status.CANCELLED)
 
-    @patch('signatures.services._notify_signer_active')
+    @patch('keel.signatures.services._notify_signer_active')
     def test_packet_status_api(self, mock_notify):
         signer = _user('signer', 'program_officer', self.agency)
         packet = services.initiate_packet(
@@ -789,10 +816,10 @@ class URLResolutionTest(TestCase):
         import uuid
         pk = uuid.uuid4()
         self.assertEqual(
-            reverse('signatures:flow-list'), '/signatures/flows/'
+            reverse('signatures:flow-list'), '/flows/'
         )
         self.assertEqual(
-            reverse('signatures:flow-create'), '/signatures/flows/create/'
+            reverse('signatures:flow-create'), '/flows/create/'
         )
         self.assertIn(str(pk), reverse('signatures:flow-detail', kwargs={'pk': pk}))
 
@@ -800,13 +827,13 @@ class URLResolutionTest(TestCase):
         import uuid
         pk = uuid.uuid4()
         self.assertEqual(
-            reverse('signatures:packet-list'), '/signatures/packets/'
+            reverse('signatures:packet-list'), '/packets/'
         )
         self.assertIn(str(pk), reverse('signatures:packet-detail', kwargs={'pk': pk}))
 
     def test_my_signatures_url(self):
         self.assertEqual(
-            reverse('signatures:my-signatures'), '/signatures/my/'
+            reverse('signatures:my-signatures'), '/my/'
         )
 
     def test_sign_url(self):
