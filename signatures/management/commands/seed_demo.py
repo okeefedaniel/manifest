@@ -21,7 +21,8 @@ from signatures.models import (
 
 User = get_user_model()
 
-DEMO_PASSWORD = getattr(settings, 'DEMO_PASSWORD', None) or 'demo2026!'
+# Demo users are passwordless (keel >= 0.20.1) — login via /demo-login/.
+# See keel CLAUDE.md → "Demo authentication — passwordless contract".
 
 
 class Command(BaseCommand):
@@ -86,7 +87,7 @@ class Command(BaseCommand):
                 },
             )
             if created:
-                user.set_password(DEMO_PASSWORD)
+                user.set_unusable_password()
                 user.save()
 
             ProductAccess.objects.get_or_create(
