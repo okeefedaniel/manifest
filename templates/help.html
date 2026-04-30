@@ -1,0 +1,314 @@
+{% extends "manifest/base.html" %}
+
+{% block page_title %}Help & FAQ{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="fw-bold mb-1">Help &amp; Frequently Asked Questions</h1>
+                <p class="text-muted mb-0">Quick answers about using Manifest. For the full reference, see the <a href="{% url 'manual' %}">User Manual</a>.</p>
+            </div>
+            <a href="{% url 'manual' %}" class="btn btn-outline-primary btn-sm" title="Open the full user manual">
+                <i class="bi bi-book me-1"></i> User Manual
+            </a>
+        </div>
+
+        <div class="accordion" id="faqAccordion">
+
+            <!-- Q1: What is Manifest -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading1">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse1"
+                            aria-expanded="false" aria-controls="faqCollapse1">
+                        <i class="bi bi-pen-fill me-2 text-primary"></i>
+                        What is Manifest?
+                    </button>
+                </h2>
+                <div id="faqCollapse1" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading1" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <p>Manifest is the e-signature platform for the DockLabs suite. It captures multi-party signatures on PDFs through configurable, ordered workflows with full audit trails.</p>
+                        <p class="mb-0">Manifest is also the <strong>cross-product signing handoff layer</strong>: peer products (Harbor, Bounty, Helm, etc.) send documents here for signature, and Manifest returns the signed PDF and a completion event when done.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q2: Flows vs Packets -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading2">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse2"
+                            aria-expanded="false" aria-controls="faqCollapse2">
+                        <i class="bi bi-diagram-3 me-2 text-primary"></i>
+                        What's the difference between a Flow and a Packet?
+                    </button>
+                </h2>
+                <div id="faqCollapse2" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading2" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <p>A <strong>Flow</strong> is a reusable template — an ordered list of signers, the documents to sign, and the signature placements on those documents. The same "Grant Award Agreement" flow can drive hundreds of signing sessions.</p>
+                        <p class="mb-0">A <strong>Packet</strong> is an active instance of a flow being executed for a specific entity. Packets carry status (Draft / In Progress / Completed / Cancelled / Declined), signer progress, and the final signed PDF.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q3: How signing order works -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading3">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse3"
+                            aria-expanded="false" aria-controls="faqCollapse3">
+                        <i class="bi bi-list-ol me-2 text-primary"></i>
+                        How does the signing order work?
+                    </button>
+                </h2>
+                <div id="faqCollapse3" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading3" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <p>Steps execute <strong>sequentially</strong>. When a packet is initiated, step 1 becomes <code>ACTIVE</code> and the assigned signer receives an email link. Steps 2+ stay <code>PENDING</code> until each prior step is signed.</p>
+                        <p class="mb-0">When the last required step is signed, Manifest generates the final signed PDF, marks the packet <strong>Completed</strong>, and (if the packet came from a peer product) posts the signed PDF back to that product's webhook.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q4: Where to sign -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading4">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse4"
+                            aria-expanded="false" aria-controls="faqCollapse4">
+                        <i class="bi bi-pen me-2 text-primary"></i>
+                        I was asked to sign something. Where do I do it?
+                    </button>
+                </h2>
+                <div id="faqCollapse4" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading4" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <p>Three places:</p>
+                        <ol>
+                            <li>The email you received contains a link to <code>/sign/&lt;step_id&gt;/</code>. Click it.</li>
+                            <li>From inside Manifest, visit <strong>My Signatures</strong> in the sidebar — every step where you're the active signer is listed there.</li>
+                            <li>Helm's dashboard <strong>Awaiting Me → Manifest</strong> column lists every step you owe across the suite.</li>
+                        </ol>
+                        <p class="mb-0">Each route lands you on the same signing page: the PDF with your fields highlighted, a signature capture pad (type / draw / upload), and the Sign or Decline buttons.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q5: Decline -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading5">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse5"
+                            aria-expanded="false" aria-controls="faqCollapse5">
+                        <i class="bi bi-x-octagon me-2 text-primary"></i>
+                        What happens if I decline to sign?
+                    </button>
+                </h2>
+                <div id="faqCollapse5" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading5" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <p>Click <strong>Decline</strong> on the signing page and provide a reason (required). Your step transitions to <code>DECLINED</code> and the packet is marked <strong>Declined</strong> — terminal. Other signers stop receiving prompts.</p>
+                        <p class="mb-0">If the packet came from a peer product, the originating workflow is notified so staff can address the issue and (if appropriate) initiate a new packet.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q6: Saved signatures -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading6">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse6"
+                            aria-expanded="false" aria-controls="faqCollapse6">
+                        <i class="bi bi-pencil-square me-2 text-primary"></i>
+                        How do I save a signature for reuse?
+                    </button>
+                </h2>
+                <div id="faqCollapse6" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading6" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <p>Visit <strong>Saved Signatures</strong> from the sidebar user menu (or <code>/my/signatures/</code>). Click <strong>New signature</strong>, pick a type (typed / drawn / uploaded), give it a label like "Formal" or "Initials", and save.</p>
+                        <p class="mb-0">Mark one signature as <strong>default</strong> and it pre-populates the signing pad next time you sign. You can have multiple saved signatures — useful if you sign in different contexts.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q7: Placement editor -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading7">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse7"
+                            aria-expanded="false" aria-controls="faqCollapse7">
+                        <i class="bi bi-bounding-box me-2 text-primary"></i>
+                        How do I tell Manifest where signatures go on the PDF?
+                    </button>
+                </h2>
+                <div id="faqCollapse7" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading7" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <p>Open a Document inside a Flow and click <strong>Edit placements</strong> (or visit <code>/documents/&lt;id&gt;/placements/</code>). Manifest renders the PDF and lets you drag fields onto each page:</p>
+                        <ul>
+                            <li><strong>Signature</strong> — captured signature image.</li>
+                            <li><strong>Initials</strong> — short capture.</li>
+                            <li><strong>Date</strong> — auto-stamped at signing.</li>
+                            <li><strong>Printed Name</strong> — typed name.</li>
+                        </ul>
+                        <p class="mb-0">Each placement is bound to a specific step (signer). Coordinates are stored as percentages so positions stay correct at any zoom level.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q8: Cross-product handoff -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading8">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse8"
+                            aria-expanded="false" aria-controls="faqCollapse8">
+                        <i class="bi bi-arrow-left-right me-2 text-primary"></i>
+                        How does the cross-product handoff work?
+                    </button>
+                </h2>
+                <div id="faqCollapse8" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading8" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <p>Peer products (Harbor, Bounty, Helm, etc.) call <code>keel.signatures.client.send_to_manifest()</code> with a source object, flow, and signer list. Manifest creates a packet, runs it through its normal signing sequence, and when the packet completes posts the signed PDF back to the source product's webhook.</p>
+                        <p class="mb-0">The source product's <code>packet_approved</code> handler attaches the signed PDF, advances its workflow status, and registers the file for FOIA. The link from peer to packet is captured as the packet's <strong>source entity</strong> and rendered in the Packet detail header.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q9: Standalone -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading9">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse9"
+                            aria-expanded="false" aria-controls="faqCollapse9">
+                        <i class="bi bi-box me-2 text-primary"></i>
+                        Does Manifest work standalone, without other DockLabs products?
+                    </button>
+                </h2>
+                <div id="faqCollapse9" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading9" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <p>Yes. Manifest is a fully functional e-signature platform on its own — flows, documents, placements, packets, signing, and audit all work without any peer products deployed.</p>
+                        <p class="mb-0">In standalone mode, signer roles are managed at <code>/roles/</code> instead of being sourced from suite SSO claims, and packets are initiated and consumed entirely inside Manifest.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q10: Audit -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading10">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse10"
+                            aria-expanded="false" aria-controls="faqCollapse10">
+                        <i class="bi bi-shield-check me-2 text-primary"></i>
+                        Where do I see the audit trail for a packet?
+                    </button>
+                </h2>
+                <div id="faqCollapse10" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading10" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <p>Open the packet and click <strong>Audit</strong> (or visit <code>/packets/&lt;id&gt;/audit/</code>). Staff see every event — packet initiation, step activation, signature capture (with IP and timestamp), declines, reminders, and PDF generation — as immutable rows.</p>
+                        <p class="mb-0">The trail is what gives ESIGN / UETA-compliant evidence of consent and process. Audit rows are written to Keel's immutable AuditLog and are FOIA-exportable.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q11: Cancel -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading11">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse11"
+                            aria-expanded="false" aria-controls="faqCollapse11">
+                        <i class="bi bi-slash-circle me-2 text-primary"></i>
+                        Can I cancel a packet that's already in progress?
+                    </button>
+                </h2>
+                <div id="faqCollapse11" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading11" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <p>Yes. Staff can visit <code>/packets/&lt;id&gt;/cancel/</code> and provide a reason. The packet is marked <strong>Cancelled</strong> (terminal) and signers can no longer sign their steps.</p>
+                        <p class="mb-0">Cancellation is logged in the audit trail with the actor and reason. To start over, initiate a new packet from the same flow.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q12: Notifications -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading12">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse12"
+                            aria-expanded="false" aria-controls="faqCollapse12">
+                        <i class="bi bi-bell me-2 text-primary"></i>
+                        How do I control which notifications I receive?
+                    </button>
+                </h2>
+                <div id="faqCollapse12" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading12" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <p>Open your sidebar profile dropdown and click <strong>Notification Preferences</strong> (or visit <a href="/notifications/preferences/">/notifications/preferences/</a>).</p>
+                        <p class="mb-0">For each event type — <code>signature_required</code>, <code>signature_reminder</code>, <code>signing_complete</code>, <code>signing_declined</code> — toggle the in-app and email channels independently. Critical alerts are delivered regardless of preferences.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q13: Support -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading13">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse13"
+                            aria-expanded="false" aria-controls="faqCollapse13">
+                        <i class="bi bi-headset me-2 text-primary"></i>
+                        How do I get help?
+                    </button>
+                </h2>
+                <div id="faqCollapse13" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading13" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="card bg-light border-0">
+                                    <div class="card-body">
+                                        <h6 class="fw-bold"><i class="bi bi-envelope me-2"></i>Email Support</h6>
+                                        <p class="small mb-0">
+                                            <a href="mailto:info@docklabs.ai">info@docklabs.ai</a><br>
+                                            Response within 1–2 business days.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light border-0">
+                                    <div class="card-body">
+                                        <h6 class="fw-bold"><i class="bi bi-chat-dots me-2"></i>Feedback Widget</h6>
+                                        <p class="small mb-0">Look in the bottom-right corner of every page. Routes to the shared support queue.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="mt-3 mb-0">For questions specific to a peer product (Harbor, Helm, Beacon, etc.), open the help link inside that product.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-body text-center p-4">
+                <i class="bi bi-question-circle display-6 text-primary d-block mb-3"></i>
+                <h5 class="fw-bold">Still have questions?</h5>
+                <p class="text-muted mb-3">If you couldn't find the answer you were looking for, please don't hesitate to contact us.</p>
+                <a href="mailto:info@docklabs.ai" class="btn btn-primary">
+                    <i class="bi bi-envelope me-2"></i> Contact Support
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}

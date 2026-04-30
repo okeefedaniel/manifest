@@ -11,6 +11,9 @@
 <link href="{% static 'css/signatures.css' %}" rel="stylesheet">
 {% endblock %}
 
+{# Topbar help icon links to the FAQ page. #}
+{% block help_url %}{% url 'help' %}{% endblock %}
+
 {# === Sidebar Customization === #}
 
 {% block sidebar_brand_icon %}bi-file-earmark-check{% endblock %}
@@ -80,7 +83,11 @@
 
 {% block sidebar_user_menu %}
 <li><a class="dropdown-item" href="{% url 'signatures:user-signature-list' %}"><i class="bi bi-pen me-2"></i>{% trans "Saved Signatures" %}</a></li>
+<li><hr class="dropdown-divider"></li>
+<li><a class="dropdown-item" href="{% url 'help' %}"><i class="bi bi-question-circle me-2"></i>{% trans "Help & FAQ" %}</a></li>
+<li><a class="dropdown-item" href="{% url 'manual' %}"><i class="bi bi-book me-2"></i>{% trans "User Manual" %}</a></li>
 {% if user.is_staff %}
+<li><hr class="dropdown-divider"></li>
 <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="bi bi-gear me-2"></i>{% trans "Admin" %}</a></li>
 {% endif %}
 <li><hr class="dropdown-divider"></li>

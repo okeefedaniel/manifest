@@ -1,0 +1,565 @@
+{% extends "manifest/base.html" %}
+
+{% block page_title %}User Manual{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .manual-nav {
+        position: sticky;
+        top: 80px;
+        max-height: calc(100vh - 100px);
+        overflow-y: auto;
+    }
+    .manual-nav .nav-link {
+        color: var(--text-secondary, #4a5568);
+        padding: 0.35rem 0.75rem;
+        font-size: 0.875rem;
+        border-left: 3px solid transparent;
+        border-radius: 0;
+    }
+    .manual-nav .nav-link:hover,
+    .manual-nav .nav-link.active {
+        color: var(--ct-blue, #1565c0);
+        border-left-color: var(--ct-blue, #1565c0);
+        background-color: rgba(21, 101, 192, 0.06);
+    }
+    .manual-section {
+        scroll-margin-top: 90px;
+    }
+    .manual-section h2 {
+        border-bottom: 2px solid #cfd8dc;
+        padding-bottom: 0.5rem;
+    }
+    .manual-section h3 {
+        color: #1565c0;
+    }
+    .role-pill {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 0.375rem;
+        font-size: 0.8125rem;
+        font-weight: 600;
+    }
+    .pill-draft       { background-color: #eceff1; color: #455a64; }
+    .pill-progress    { background-color: #e3f2fd; color: #1565c0; }
+    .pill-completed   { background-color: #e8f5e9; color: #2e7d32; }
+    .pill-cancelled   { background-color: #fff3e0; color: #e65100; }
+    .pill-declined    { background-color: #ffebee; color: #c62828; }
+    .workflow-step {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 0.75rem 0;
+    }
+    .workflow-step .step-num {
+        flex-shrink: 0;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        background-color: #1565c0;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.875rem;
+    }
+    .status-flow {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .status-flow .badge {
+        font-size: 0.8125rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+<div class="row">
+    <!-- Sidebar nav (desktop) -->
+    <div class="col-lg-3 d-none d-lg-block">
+        <nav class="manual-nav" aria-label="Manual sections">
+            <h6 class="fw-bold text-uppercase text-muted small mb-3 px-2">Contents</h6>
+            <ul class="nav flex-column">
+                <li class="nav-item"><a class="nav-link" href="#overview"><i class="bi bi-house me-2"></i>Overview</a></li>
+                <li class="nav-item"><a class="nav-link" href="#roles"><i class="bi bi-shield-lock me-2"></i>Roles</a></li>
+                <li class="nav-item"><a class="nav-link" href="#getting-started"><i class="bi bi-rocket-takeoff me-2"></i>Getting Started</a></li>
+                <li class="nav-item"><a class="nav-link" href="#flows"><i class="bi bi-diagram-3 me-2"></i>Flows</a></li>
+                <li class="nav-item"><a class="nav-link" href="#steps"><i class="bi bi-list-ol me-2"></i>Steps &amp; Signers</a></li>
+                <li class="nav-item"><a class="nav-link" href="#documents"><i class="bi bi-file-earmark-pdf me-2"></i>Documents &amp; Placements</a></li>
+                <li class="nav-item"><a class="nav-link" href="#roles-registry"><i class="bi bi-people me-2"></i>Roles Registry</a></li>
+                <li class="nav-item"><a class="nav-link" href="#builder"><i class="bi bi-magic me-2"></i>Template Builder</a></li>
+                <li class="nav-item"><a class="nav-link" href="#packets"><i class="bi bi-file-earmark-text me-2"></i>Packets</a></li>
+                <li class="nav-item"><a class="nav-link" href="#signing"><i class="bi bi-pen me-2"></i>Signing Experience</a></li>
+                <li class="nav-item"><a class="nav-link" href="#saved"><i class="bi bi-pencil-square me-2"></i>Saved Signatures</a></li>
+                <li class="nav-item"><a class="nav-link" href="#handoff"><i class="bi bi-arrow-left-right me-2"></i>Cross-Product Handoff</a></li>
+                <li class="nav-item"><a class="nav-link" href="#helm-feed"><i class="bi bi-broadcast me-2"></i>Helm Inbox Feed</a></li>
+                <li class="nav-item"><a class="nav-link" href="#audit"><i class="bi bi-shield-check me-2"></i>Audit Trail</a></li>
+                <li class="nav-item"><a class="nav-link" href="#notifications"><i class="bi bi-bell me-2"></i>Notifications</a></li>
+                <li class="nav-item"><a class="nav-link" href="#statuses"><i class="bi bi-diagram-2 me-2"></i>Status Reference</a></li>
+                <li class="nav-item"><a class="nav-link" href="#shortcuts"><i class="bi bi-keyboard me-2"></i>Keyboard Shortcuts</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Main content -->
+    <div class="col-lg-9">
+
+        <!-- Mobile TOC -->
+        <div class="d-lg-none mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <button class="btn btn-outline-primary btn-sm w-100" type="button" data-bs-toggle="collapse" data-bs-target="#mobileToc">
+                        <i class="bi bi-list me-2"></i>Table of Contents
+                    </button>
+                    <div class="collapse mt-3" id="mobileToc">
+                        <div class="list-group list-group-flush">
+                            <a href="#overview" class="list-group-item list-group-item-action small">Overview</a>
+                            <a href="#roles" class="list-group-item list-group-item-action small">Roles</a>
+                            <a href="#getting-started" class="list-group-item list-group-item-action small">Getting Started</a>
+                            <a href="#flows" class="list-group-item list-group-item-action small">Flows</a>
+                            <a href="#steps" class="list-group-item list-group-item-action small">Steps &amp; Signers</a>
+                            <a href="#documents" class="list-group-item list-group-item-action small">Documents &amp; Placements</a>
+                            <a href="#roles-registry" class="list-group-item list-group-item-action small">Roles Registry</a>
+                            <a href="#builder" class="list-group-item list-group-item-action small">Template Builder</a>
+                            <a href="#packets" class="list-group-item list-group-item-action small">Packets</a>
+                            <a href="#signing" class="list-group-item list-group-item-action small">Signing Experience</a>
+                            <a href="#saved" class="list-group-item list-group-item-action small">Saved Signatures</a>
+                            <a href="#handoff" class="list-group-item list-group-item-action small">Cross-Product Handoff</a>
+                            <a href="#helm-feed" class="list-group-item list-group-item-action small">Helm Inbox Feed</a>
+                            <a href="#audit" class="list-group-item list-group-item-action small">Audit Trail</a>
+                            <a href="#notifications" class="list-group-item list-group-item-action small">Notifications</a>
+                            <a href="#statuses" class="list-group-item list-group-item-action small">Status Reference</a>
+                            <a href="#shortcuts" class="list-group-item list-group-item-action small">Keyboard Shortcuts</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="fw-bold mb-1">Manifest User Manual</h1>
+                <p class="text-muted mb-0">Comprehensive guide to the e-signature platform for the DockLabs suite.</p>
+            </div>
+            <a href="{% url 'help' %}" class="btn btn-outline-primary btn-sm" title="Open the FAQ">
+                <i class="bi bi-question-circle me-1"></i> FAQ
+            </a>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- OVERVIEW -->
+        <!-- ============================================================== -->
+        <section id="overview" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-house me-2 text-primary"></i>Overview</h2>
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4 lh-lg">
+                    <p>Manifest is the e-signature platform for the DockLabs suite. It captures multi-party signatures on PDFs through configurable, ordered workflows with full audit trails — and serves as the cross-product signing handoff layer for the rest of the suite.</p>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi bi-diagram-3 text-primary fs-5 mt-1"></i>
+                                <div>
+                                    <strong>Reusable flows</strong>
+                                    <p class="small text-muted mb-0">Build a signing workflow once; instantiate it as many packets as you need.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi bi-pen text-primary fs-5 mt-1"></i>
+                                <div>
+                                    <strong>Multi-party signing</strong>
+                                    <p class="small text-muted mb-0">Sequential, ordered signers. Each signer's turn unlocks when the previous step is signed.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi bi-shield-check text-primary fs-5 mt-1"></i>
+                                <div>
+                                    <strong>ESIGN / UETA compliance</strong>
+                                    <p class="small text-muted mb-0">Cryptographic verification, IP capture, immutable audit trail, FOIA-exportable.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi bi-arrow-left-right text-primary fs-5 mt-1"></i>
+                                <div>
+                                    <strong>Suite handoff layer</strong>
+                                    <p class="small text-muted mb-0">Peer products send packets here for signature; Manifest returns the signed PDF on completion.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- ROLES -->
+        <!-- ============================================================== -->
+        <section id="roles" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-shield-lock me-2 text-primary"></i>Roles</h2>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 lh-lg">
+                    <p>Manifest's signer roles can be sourced two ways:</p>
+                    <ul>
+                        <li><strong>Suite mode</strong> — when deployed alongside other DockLabs products, roles come from <code>KeelUser.Role</code> via OIDC SSO claims (<code>product_access</code>).</li>
+                        <li><strong>Standalone mode</strong> — roles are managed in Manifest's UI at <code>/roles/</code>. Each role has a <code>key</code>, <code>label</code>, optional description, and an <code>is_active</code> flag.</li>
+                    </ul>
+                    <p class="mb-0 small text-muted">Staff-only surfaces (creating flows, editing placements, initiating and cancelling packets, viewing audit trails) require <code>is_staff</code> plus the <code>grant_manager</code> or equivalent agency-staff role. Any authenticated user can sign their own assigned step.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- GETTING STARTED -->
+        <!-- ============================================================== -->
+        <section id="getting-started" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-rocket-takeoff me-2 text-primary"></i>Getting Started</h2>
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body p-4 lh-lg">
+                    <h5 class="fw-bold"><i class="bi bi-box-arrow-in-right me-2 text-primary"></i>Signing in</h5>
+                    <div class="workflow-step">
+                        <span class="step-num">1</span>
+                        <span>From any DockLabs product, click <strong>Manifest</strong> in the fleet switcher, or visit <code>https://manifest.docklabs.ai/</code>.</span>
+                    </div>
+                    <div class="workflow-step">
+                        <span class="step-num">2</span>
+                        <span>Click <strong>Sign in with DockLabs</strong> (the suite OIDC button).</span>
+                    </div>
+                    <div class="workflow-step">
+                        <span class="step-num">3</span>
+                        <span>You'll land on <code>/dashboard/</code> — the Packets list.</span>
+                    </div>
+                    <div class="alert alert-info border-0 small mt-3 mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        If you arrived via an email signing link (<code>/sign/&lt;step_id&gt;/</code>), you'll be sent through the same login flow and bounced back to the signing page once authenticated.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- FLOWS -->
+        <!-- ============================================================== -->
+        <section id="flows" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-diagram-3 me-2 text-primary"></i>Flows (templates)</h2>
+            <p>A <strong>SignatureFlow</strong> is the reusable template that drives every packet: a name, an optional description, an ordered list of steps, the document templates that will be signed, and the signature placements on those documents.</p>
+            <p><code>/flows/</code> lists every active flow. Click into one to manage:</p>
+            <ul>
+                <li><strong>Steps</strong> — the ordered signing sequence.</li>
+                <li><strong>Documents</strong> — the PDF templates attached to the flow.</li>
+                <li><strong>Placements</strong> — where each signer signs on each page.</li>
+            </ul>
+            <p class="small text-muted">Flows can be linked to a <code>GrantProgram</code> when deployed alongside Harbor, or stand alone.</p>
+
+            <h3 class="fw-bold mt-4">Creating a flow</h3>
+            <div class="workflow-step"><span class="step-num">1</span><span>Click <strong>Flows → New flow</strong>.</span></div>
+            <div class="workflow-step"><span class="step-num">2</span><span>Provide a name and optional description.</span></div>
+            <div class="workflow-step"><span class="step-num">3</span><span>Add steps, upload one or more PDFs, and define placements for each signer.</span></div>
+            <div class="workflow-step"><span class="step-num">4</span><span>Save. The flow is now ready to instantiate as packets.</span></div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- STEPS -->
+        <!-- ============================================================== -->
+        <section id="steps" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-list-ol me-2 text-primary"></i>Steps &amp; Signers</h2>
+            <p>A <strong>SignatureFlowStep</strong> is one signer in the flow. Each step carries:</p>
+            <ul>
+                <li><strong>Order</strong> — execution sequence (1 = first signer).</li>
+                <li><strong>Label</strong> — e.g. "Program Officer Approval", "Director Sign-off".</li>
+                <li><strong>Assignment type</strong> — <code>user</code> (a specific person) or <code>role</code> (a role key like <code>director</code>).</li>
+                <li><strong>Required</strong> — whether the step blocks completion.</li>
+            </ul>
+            <p>Steps execute <strong>sequentially</strong>. Step 2 only becomes <code>ACTIVE</code> after step 1 is <code>SIGNED</code>. The packet completes when every required step is signed.</p>
+            <p class="small text-muted mb-0">Edit at <code>/flows/&lt;flow_id&gt;/steps/create/</code> and <code>/steps/&lt;id&gt;/edit/</code> (staff only).</p>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- DOCUMENTS & PLACEMENTS -->
+        <!-- ============================================================== -->
+        <section id="documents" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-file-earmark-pdf me-2 text-primary"></i>Documents &amp; Placements</h2>
+            <p>A <strong>SignatureDocument</strong> is the PDF template attached to a flow. Files are validated by Keel's <code>FileSecurityValidator</code> (extension allowlist, size limit, malware scan). Page count is auto-populated on upload.</p>
+
+            <h3 class="fw-bold mt-4">Placements</h3>
+            <p>A <strong>SignaturePlacement</strong> says "this field, on this page, at this position, belongs to this signer." Coordinates are stored as <strong>percentages</strong> of page dimensions, so placements stay correct regardless of rendering DPI or zoom level.</p>
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead><tr><th>Field type</th><th>Purpose</th></tr></thead>
+                            <tbody>
+                                <tr><td><strong>Signature</strong></td><td>A captured signature image.</td></tr>
+                                <tr><td><strong>Initials</strong></td><td>A short initials capture.</td></tr>
+                                <tr><td><strong>Date</strong></td><td>The auto-stamped signing date.</td></tr>
+                                <tr><td><strong>Printed name</strong></td><td>The signer's typed name.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="fw-bold mt-4">Placement editor</h3>
+            <p class="mb-0"><code>/documents/&lt;id&gt;/placements/</code> opens a visual placement editor — a PDF preview with drag-to-position fields. Each placement is bound to a specific step (signer). Saves go through the JSON API at <code>/api/documents/&lt;id&gt;/placements/</code>.</p>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- ROLES REGISTRY -->
+        <!-- ============================================================== -->
+        <section id="roles-registry" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-people me-2 text-primary"></i>Roles Registry</h2>
+            <p><code>/roles/</code> (staff only) is the standalone-mode role manager. Use it when Manifest is deployed alone and you can't rely on SSO-issued role claims.</p>
+            <p>Each role has:</p>
+            <ul>
+                <li><strong>Key</strong> — machine-readable slug (e.g. <code>director</code>).</li>
+                <li><strong>Label</strong> — human-readable name.</li>
+                <li><strong>Description</strong> — optional context.</li>
+                <li><strong>Active flag</strong> — toggle without deleting.</li>
+            </ul>
+            <p class="small text-muted mb-0">When a step's assignment type is <code>role</code>, the matching role key is resolved at packet-initiation time to whichever user holds that role.</p>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- TEMPLATE BUILDER -->
+        <!-- ============================================================== -->
+        <section id="builder" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-magic me-2 text-primary"></i>Template Builder Wizard</h2>
+            <p><code>/builder/</code> (or <code>/builder/&lt;flow_id&gt;/</code> to edit) is a unified wizard that walks staff through creating a flow end-to-end:</p>
+            <div class="workflow-step"><span class="step-num">1</span><span>Flow metadata (name, description).</span></div>
+            <div class="workflow-step"><span class="step-num">2</span><span>Steps + signer assignments.</span></div>
+            <div class="workflow-step"><span class="step-num">3</span><span>Document upload.</span></div>
+            <div class="workflow-step"><span class="step-num">4</span><span>Placement editor.</span></div>
+            <div class="workflow-step"><span class="step-num">5</span><span>Save.</span></div>
+            <p class="small text-muted mb-0">The wizard saves through <code>/api/builder/save/</code> — a single round-trip that creates or updates the flow plus its dependents atomically.</p>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- PACKETS -->
+        <!-- ============================================================== -->
+        <section id="packets" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Packets (active signing sessions)</h2>
+            <p>A <strong>SigningPacket</strong> is an instance of a flow being executed. Listed at <code>/packets/</code> (also mounted at <code>/dashboard/</code>). Each packet carries a flow, a title, an optional source entity (generic FK to any model — Harbor Award, Bounty Opportunity, etc.), a status, the final signed PDF, and timestamps for create / complete / cancel.</p>
+
+            <h3 class="fw-bold mt-4">Initiating a packet</h3>
+            <p>Visit <code>/packets/initiate/&lt;flow_id&gt;/</code> (staff only). Pick the source entity (if any), confirm signer assignments, and submit.</p>
+            <p>Manifest creates a <code>SigningStep</code> for each flow step, sets step 1 to <code>ACTIVE</code>, sends the first signer their email link, and the packet enters <code>IN_PROGRESS</code>.</p>
+
+            <h3 class="fw-bold mt-4">Cancelling a packet</h3>
+            <p class="mb-0"><code>/packets/&lt;id&gt;/cancel/</code> (staff only). Provide a reason; cancelled packets are terminal — signers can no longer sign their steps. Cancellation is recorded in the audit trail.</p>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- SIGNING EXPERIENCE -->
+        <!-- ============================================================== -->
+        <section id="signing" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-pen me-2 text-primary"></i>The Signing Experience</h2>
+            <p>When you're the active signer, you receive:</p>
+            <ul>
+                <li>An email with a <code>/sign/&lt;step_id&gt;/</code> link.</li>
+                <li>A <code>signature_required</code> notification visible in your sidebar bell.</li>
+                <li>An item in your Helm dashboard's <strong>Awaiting Me</strong> column.</li>
+            </ul>
+            <p>Click the link. Manifest renders the PDF with your placement fields highlighted, a signature capture pad (type / draw / upload), a signing intent confirmation, and Sign / Decline buttons.</p>
+
+            <h3 class="fw-bold mt-4">Signing</h3>
+            <p>Submit fires <code>/sign/&lt;step_id&gt;/complete/</code>. Manifest:</p>
+            <ol>
+                <li>Records the signature image, IP, and timestamp.</li>
+                <li>Marks the step <code>SIGNED</code>.</li>
+                <li>Activates the next step (if any) and emails its signer.</li>
+                <li>If yours was the last step, generates the final signed PDF and marks the packet <strong>Completed</strong>.</li>
+            </ol>
+
+            <h3 class="fw-bold mt-4">Declining</h3>
+            <p class="mb-0"><code>/sign/&lt;step_id&gt;/decline/</code> — record a reason. The step transitions to <code>DECLINED</code> and the packet to <strong>Declined</strong> (terminal). Other signers stop receiving prompts.</p>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- SAVED SIGNATURES -->
+        <!-- ============================================================== -->
+        <section id="saved" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-pencil-square me-2 text-primary"></i>Saved Signatures</h2>
+            <p><code>/my/signatures/</code> is your library of saved signatures for fast reuse:</p>
+            <ul>
+                <li><strong>Typed</strong> — a font-rendered signature from your name.</li>
+                <li><strong>Drawn</strong> — captured on a touch / mouse pad.</li>
+                <li><strong>Uploaded</strong> — a PNG you supplied.</li>
+            </ul>
+            <p class="mb-0">Each signature has a label (e.g. "Formal", "Initials") and an optional <strong>default</strong> flag. Defaults pre-populate the signing pad when you sign. <code>/my/signatures/&lt;id&gt;/default/</code> toggles the default; <code>/delete/</code> removes a saved signature.</p>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- HANDOFF -->
+        <!-- ============================================================== -->
+        <section id="handoff" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-arrow-left-right me-2 text-primary"></i>Cross-Product Handoff</h2>
+            <p>Manifest is the suite's signing handoff layer. The contract:</p>
+            <div class="workflow-step"><span class="step-num">1</span><span><strong>Inbound</strong> — a peer product calls <code>keel.signatures.client.send_to_manifest()</code>. The peer creates a <code>ManifestHandoff</code> row pointing at the Manifest packet UUID.</span></div>
+            <div class="workflow-step"><span class="step-num">2</span><span><strong>Manifest signs</strong> — the packet runs through its normal sequential signing sequence.</span></div>
+            <div class="workflow-step"><span class="step-num">3</span><span><strong>Outbound completion</strong> — Manifest POSTs the signed PDF to the source product's webhook signed with <code>MANIFEST_WEBHOOK_SECRET</code>. The source's <code>packet_approved</code> handler attaches the signed PDF, advances its workflow status, notifies collaborators, and registers the file with <code>keel.foia.export</code>.</span></div>
+
+            <div class="alert alert-info border-0 small mt-3">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Standalone mode works fully.</strong> A flow with no <code>source_entity</code> GFK runs the same way; the signed PDF is available at <code>/packets/&lt;id&gt;/</code>. Peer products work when Manifest is unavailable too — their "Send to Manifest" controls fall back to a local "mark approved + upload signed PDF" path.
+            </div>
+
+            <p class="small text-muted mb-0">When a packet is initiated by a peer call, the Packet detail page shows the <strong>source entity</strong> (with a clickable URL back to the source product when configured).</p>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- HELM FEED -->
+        <!-- ============================================================== -->
+        <section id="helm-feed" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-broadcast me-2 text-primary"></i>Helm Inbox Feed</h2>
+            <p>Manifest exposes two helm-feed endpoints:</p>
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead><tr><th>Endpoint</th><th>Purpose</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>/api/v1/helm-feed/</code></td><td>Aggregate metrics for Helm's "Across the suite" dashboard (active packets, completed in period, declined, etc.).</td></tr>
+                                <tr><td><code>/api/v1/helm-feed/inbox/?user_sub=&lt;sub&gt;</code></td><td>Per-user inbox: the SigningSteps where this user is the active signer and the parent packet is IN_PROGRESS, plus that user's unread Manifest notifications.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <p class="small text-muted mb-0">Both require <code>Authorization: Bearer $HELM_FEED_API_KEY</code> (skipped in <code>DEMO_MODE</code>). The per-user endpoint resolves the OIDC <code>sub</code> claim to the local user via <code>SocialAccount(provider='keel', uid=sub)</code>. Unknown subs return an empty <code>items[]</code> (200), not 404.</p>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- AUDIT -->
+        <!-- ============================================================== -->
+        <section id="audit" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-shield-check me-2 text-primary"></i>Audit Trail</h2>
+            <p>Every meaningful event is written to a Keel <code>AuditLog</code> row, immutable and FOIA-exportable:</p>
+            <ul>
+                <li>Flow created / edited / deleted.</li>
+                <li>Document uploaded / deleted.</li>
+                <li>Placement created / moved / deleted.</li>
+                <li>Packet initiated / cancelled.</li>
+                <li>Step activated / signed / declined / reminded.</li>
+                <li>Signed PDF generated.</li>
+            </ul>
+            <p class="mb-0"><code>/packets/&lt;id&gt;/audit/</code> (staff only) renders the per-packet trail with timestamps, actor, IP, and structured payload. The trail is what gives ESIGN / UETA-compliant evidence of consent and process.</p>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- NOTIFICATIONS -->
+        <!-- ============================================================== -->
+        <section id="notifications" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-bell me-2 text-primary"></i>Notifications</h2>
+            <p>Manifest's notification catalog (event types you may receive):</p>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead><tr><th>Event</th><th>When it fires</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>signature_required</code></td><td>Your signing step has just become ACTIVE.</td></tr>
+                                <tr><td><code>signature_reminder</code></td><td>A reminder was sent for your pending step.</td></tr>
+                                <tr><td><code>signing_complete</code></td><td>A packet you're on completed.</td></tr>
+                                <tr><td><code>signing_declined</code></td><td>A packet you're on was declined by another signer.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <p class="small text-muted mt-3 mb-0">Channels (in-app + email) are user-configurable at <a href="/notifications/preferences/">/notifications/preferences/</a>. The link is in the sidebar user-menu dropdown.</p>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- STATUS REFERENCE -->
+        <!-- ============================================================== -->
+        <section id="statuses" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-diagram-2 me-2 text-primary"></i>Status Reference</h2>
+
+            <h3 class="fw-bold mt-2">Packet status</h3>
+            <div class="status-flow my-2">
+                <span class="role-pill pill-draft">Draft</span>
+                <i class="bi bi-arrow-right"></i>
+                <span class="role-pill pill-progress">In Progress</span>
+                <i class="bi bi-arrow-right"></i>
+                <span class="role-pill pill-completed">Completed</span>
+                <span class="text-muted mx-2">/</span>
+                <span class="role-pill pill-cancelled">Cancelled</span>
+                <span class="text-muted mx-2">/</span>
+                <span class="role-pill pill-declined">Declined</span>
+            </div>
+
+            <h3 class="fw-bold mt-4">Step status</h3>
+            <div class="status-flow my-2">
+                <span class="badge bg-secondary">Pending</span>
+                <i class="bi bi-arrow-right"></i>
+                <span class="badge bg-primary">Active</span>
+                <i class="bi bi-arrow-right"></i>
+                <span class="badge bg-success">Signed</span>
+                <span class="text-muted mx-2">/</span>
+                <span class="badge bg-danger">Declined</span>
+                <span class="text-muted mx-2">/</span>
+                <span class="badge bg-light text-dark">Skipped</span>
+            </div>
+
+            <h3 class="fw-bold mt-4">Signature type</h3>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead><tr><th>Type</th><th>Meaning</th></tr></thead>
+                            <tbody>
+                                <tr><td>Typed</td><td>Rendered from typed name in a script font.</td></tr>
+                                <tr><td>Drawn</td><td>Captured on a signature pad.</td></tr>
+                                <tr><td>Uploaded</td><td>A PNG image supplied by the signer.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="fw-bold mt-4">Field type</h3>
+            <p class="mb-0">Signature, Initials, Date, Printed Name.</p>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- KEYBOARD SHORTCUTS -->
+        <!-- ============================================================== -->
+        <section id="shortcuts" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-keyboard me-2 text-primary"></i>Keyboard Shortcuts</h2>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <kbd>⌘K</kbd> <span class="text-muted">/</span> <kbd>Ctrl+K</kbd>
+                        <span>Open the suite-wide search modal.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer / next steps -->
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-body text-center p-4">
+                <h5 class="fw-bold mb-2">Need a quick answer?</h5>
+                <p class="text-muted mb-3">The FAQ covers the most common questions in 13 short cards.</p>
+                <a href="{% url 'help' %}" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-question-circle me-1"></i> Help &amp; FAQ
+                </a>
+                <a href="mailto:info@docklabs.ai" class="btn btn-primary">
+                    <i class="bi bi-envelope me-1"></i> Contact Support
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+</div>
+{% endblock %}
