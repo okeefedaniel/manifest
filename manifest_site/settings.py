@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'keel.security',
     'keel.notifications',
     'keel.requests',
+    'keel.settings',
     # Third-party
     'crispy_forms',
     'crispy_bootstrap5',
