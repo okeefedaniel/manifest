@@ -12,7 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() in ('true', '1', 'yes')
 DEMO_MODE = os.environ.get('DEMO_MODE', 'False').lower() in ('true', '1', 'yes')
-DEMO_ROLES = ['admin', 'staff', 'signer']
+DEMO_ROLES = ['admin', 'agency_admin', 'staff', 'signer']
 
 import secrets as _secrets
 

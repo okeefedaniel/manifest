@@ -153,11 +153,23 @@ def send_notification_email(recipient_email, subject, template_name, context):
 # Permission mixins
 # ---------------------------------------------------------------------------
 
+# Role allowlist for the standalone Manifest staff gate. Includes the
+# customer-side ``agency_admin`` so a customer admin can manage signing
+# packets without holding Django ``is_staff`` (which also grants
+# /admin/ access — IT-only). ``is_staff`` remains accepted as a
+# fallback for legacy demo accounts.
+_MANIFEST_STAFF_ROLES = frozenset({
+    'system_admin', 'admin', 'agency_admin', 'staff',
+})
+
+
 class _StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
-    """Standalone fallback: require ``is_staff``."""
+    """Standalone fallback: staff role OR Django ``is_staff`` grants access."""
 
     def test_func(self):
-        return self.request.user.is_staff
+        user = self.request.user
+        role = getattr(user, 'role', None)
+        return bool(role and role in _MANIFEST_STAFF_ROLES) or user.is_staff
 
 
 # Import mixins at module level.  We cannot rely on try/except ImportError
@@ -258,6 +270,17 @@ def get_assignable_users():
     ).order_by('last_name', 'first_name')
 
 
+# Standalone Manifest role choices (admin tier + signing-domain roles).
+# Includes ``agency_admin`` so customer-side admins are pickable as
+# signers without holding the IT-tier ``admin`` role.
+_MANIFEST_ROLE_LABELS = {
+    'admin': 'Admin',
+    'agency_admin': 'Agency Administrator',
+    'staff': 'Staff',
+    'signer': 'Signer',
+}
+
+
 # Harbor role display labels for signature step assignment
 _HARBOR_ROLE_LABELS = {
     'system_admin': 'System Administrator',
@@ -293,6 +316,12 @@ def get_role_label(role_key):
         return ''
     if is_harbor():
         return _HARBOR_ROLE_LABELS.get(role_key, role_key)
+    # Standalone: prefer the suite-wide role label table for cross-product
+    # role keys (e.g. ``agency_admin`` showing up in a Manifest-issued
+    # signature step), falling back to the SignatureRole table for the
+    # bespoke signing-domain roles.
+    if role_key in _MANIFEST_ROLE_LABELS:
+        return _MANIFEST_ROLE_LABELS[role_key]
     from .models import SignatureRole
     try:
         return SignatureRole.objects.get(key=role_key).label

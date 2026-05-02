@@ -72,6 +72,9 @@ class Command(BaseCommand):
         """Ensure demo users exist with correct ProductAccess."""
         user_defs = [
             ('admin', 'Alex', 'Director', 'admin', True),
+            # Customer-side admin tier — operational powers without
+            # Django /admin/ access (is_staff stays False on purpose).
+            ('agency_admin', 'Avery', 'Agency-Admin', 'agency_admin', False),
             ('staff', 'Sarah', 'Thompson', 'staff', True),
             ('signer', 'Chris', 'Martinez', 'signer', False),
         ]
