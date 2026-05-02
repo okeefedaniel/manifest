@@ -55,6 +55,7 @@ urlpatterns = [
     path('api/v1/helm-feed/', manifest_helm_feed, name='helm-feed'),
     path('api/v1/helm-feed/inbox/', manifest_helm_feed_inbox, name='helm-feed-inbox'),
     path('notifications/', include('keel.notifications.urls')),
+    path('settings/', include('keel.settings.urls')),
     path('', include('signatures.urls')),
     path('search/', search_view, name='search'),
     path('keel/requests/', include('keel.requests.urls')),
