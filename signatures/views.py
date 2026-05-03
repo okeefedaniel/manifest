@@ -261,7 +261,14 @@ class DocumentDeleteView(GrantManagerRequiredMixin, DeleteView):
 # Placement editor (any authenticated user)
 # ===========================================================================
 
-class PlacementEditorView(LoginRequiredMixin, TemplateView):
+class PlacementEditorView(AgencyStaffRequiredMixin, TemplateView):
+    """Placement editor — staff-only.
+
+    Previously LoginRequiredMixin allowed any authenticated user to read
+    every flow's signature templates by walking document UUIDs. Templates
+    can encode sensitive workflow detail (who signs what, with what
+    role) and shouldn't be enumerable by signers or guests.
+    """
     template_name = 'signatures/placement_editor.html'
 
     def get_context_data(self, **kwargs):
@@ -407,6 +414,16 @@ class PacketListView(AgencyStaffRequiredMixin, SortableListMixin, ListView):
 
     def get_queryset(self):
         qs = super().get_queryset().select_related('flow', 'initiated_by')
+        # Scope to packets the user is entitled to see — same rule as
+        # PacketDetailView. Packet titles can leak sensitive context
+        # (severance, NDA, internal investigation) so a generic agency-staff
+        # role MUST NOT see every packet across the org.
+        user = self.request.user
+        if not getattr(user, 'is_superuser', False):
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(initiated_by=user) | Q(steps__signer=user)
+            ).distinct()
         status = self.request.GET.get('status')
         if status:
             qs = qs.filter(status=status)
@@ -415,8 +432,16 @@ class PacketListView(AgencyStaffRequiredMixin, SortableListMixin, ListView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         # Dashboard summary cards — counts by status so the user can
-        # jump into a filtered packet view.
+        # jump into a filtered packet view. Stat counts are scoped to the
+        # same visibility window as the listing so cardinality leaks
+        # don't reveal hidden packets.
+        user = self.request.user
         base_qs = SigningPacket.objects.all()
+        if not getattr(user, 'is_superuser', False):
+            from django.db.models import Q
+            base_qs = base_qs.filter(
+                Q(initiated_by=user) | Q(steps__signer=user)
+            ).distinct()
         ctx['stat_total'] = base_qs.count()
         ctx['stat_in_progress'] = base_qs.filter(status='in_progress').count()
         ctx['stat_pending'] = base_qs.filter(status='pending').count()
@@ -499,9 +524,27 @@ class PacketDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
+def _packet_visible_to(user, packet):
+    """True when the user is entitled to see/act on this packet.
+
+    Mirrors PacketDetailView.get_queryset(): superusers see everything;
+    everyone else needs to be the initiator or an assigned signer. Staff
+    role on its own does NOT grant cross-packet visibility — packets can
+    contain severance agreements, NDAs, etc. that even agency_admin should
+    not browse blindly.
+    """
+    if getattr(user, 'is_superuser', False):
+        return True
+    if packet.initiated_by_id == getattr(user, 'pk', None):
+        return True
+    return packet.steps.filter(signer=user).exists()
+
+
 class PacketCancelView(AgencyStaffRequiredMixin, View):
     def post(self, request, pk):
         packet = get_object_or_404(SigningPacket, pk=pk)
+        if not _packet_visible_to(request.user, packet):
+            raise PermissionDenied('You are not authorized to cancel this packet.')
         if packet.status not in [SigningPacket.Status.DRAFT, SigningPacket.Status.IN_PROGRESS]:
             messages.error(request, _('This packet cannot be cancelled.'))
             return redirect('signatures:packet-detail', pk=pk)
@@ -517,6 +560,14 @@ class PacketAuditView(AgencyStaffRequiredMixin, DetailView):
     model = SigningPacket
     template_name = 'signatures/packet_audit.html'
     context_object_name = 'packet'
+
+    def get_object(self, queryset=None):
+        packet = super().get_object(queryset=queryset)
+        if not _packet_visible_to(self.request.user, packet):
+            raise PermissionDenied(
+                'You are not authorized to view this packet audit trail.'
+            )
+        return packet
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -695,18 +746,46 @@ class UserSignatureCreateView(LoginRequiredMixin, CreateView):
     template_name = 'signatures/user_signature_form.html'
     success_url = reverse_lazy('signatures:user-signature-list')
 
+    # Signed-canvas PNGs above this size are almost certainly an attempt
+    # to smuggle something else through the field. 2 MiB is generous for
+    # a 600x150 trace.
+    _MAX_DRAWN_BYTES = 2 * 1024 * 1024
+
     def form_valid(self, form):
         form.instance.user = self.request.user
 
-        # Handle drawn signature from hidden field
+        # Handle drawn signature from hidden field. The data: URL comes
+        # straight from the browser's <canvas>, so validate (a) length
+        # before decode, (b) PNG magic bytes after decode, (c) decoded
+        # size — otherwise a forged hidden field can drop arbitrary
+        # bytes into media storage.
         drawn_data = self.request.POST.get('drawn_data', '')
         if form.instance.signature_type == 'drawn' and drawn_data:
             import base64
+            import binascii
             from django.core.files.base import ContentFile
             img_data = drawn_data
             if ',' in img_data:
                 img_data = img_data.split(',', 1)[1]
-            decoded = base64.b64decode(img_data)
+            # Cap the base64 string length first so we never decode a 100MB
+            # blob just to reject it.
+            if len(img_data) > self._MAX_DRAWN_BYTES * 2:
+                form.add_error(None, _('Drawn signature is too large.'))
+                return self.form_invalid(form)
+            try:
+                decoded = base64.b64decode(img_data, validate=True)
+            except (binascii.Error, ValueError):
+                form.add_error(None, _('Drawn signature is not valid base64.'))
+                return self.form_invalid(form)
+            if len(decoded) > self._MAX_DRAWN_BYTES:
+                form.add_error(None, _('Drawn signature exceeds the 2 MB limit.'))
+                return self.form_invalid(form)
+            # PNG magic: 89 50 4E 47 0D 0A 1A 0A. Reject anything else
+            # so SVGs (XSS via <script>), HTML, or executables can't be
+            # stashed under a .png filename.
+            if not decoded.startswith(b'\x89PNG\r\n\x1a\n'):
+                form.add_error(None, _('Drawn signature must be a PNG image.'))
+                return self.form_invalid(form)
             filename = f'saved_sig_{self.request.user.pk}.png'
             form.instance.signature_image.save(filename, ContentFile(decoded), save=False)
 
@@ -740,6 +819,13 @@ class UserSignatureSetDefaultView(LoginRequiredMixin, View):
 class PacketStatusAPIView(LoginRequiredMixin, View):
     def get(self, request, pk):
         packet = get_object_or_404(SigningPacket, pk=pk)
+        # Scope by visibility — same rule as PacketDetailView. Otherwise
+        # any authenticated user could enumerate packet status + signer
+        # names by guessing UUIDs leaked in notification emails.
+        if not _packet_visible_to(request.user, packet):
+            raise PermissionDenied(
+                'You are not authorized to view this packet.'
+            )
         signed, total = packet.progress
         steps = [
             {

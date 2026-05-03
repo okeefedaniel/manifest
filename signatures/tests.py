@@ -561,14 +561,24 @@ class PlacementEditorViewTest(TestCase):
             page_count=1, uploaded_by=self.officer,
         )
 
-    def test_placement_editor_accessible_by_any_user(self):
-        """Any authenticated user should access the placement editor."""
+    def test_placement_editor_accessible_by_staff(self):
+        """The placement editor is staff-only — flow templates can leak
+        sensitive workflow detail (who signs, in what role) so they
+        shouldn't be browsable by signers or applicants."""
         self.client.force_login(self.regular_user)
         resp = self.client.get(
             reverse('signatures:placement-editor', kwargs={'document_id': self.document.pk}),
         )
         self.assertEqual(resp.status_code, 200)
         self.assertIn('steps_json', resp.context)
+
+    def test_placement_editor_blocked_for_applicant(self):
+        applicant = _user('applicant_user', 'applicant', self.agency)
+        self.client.force_login(applicant)
+        resp = self.client.get(
+            reverse('signatures:placement-editor', kwargs={'document_id': self.document.pk}),
+        )
+        self.assertNotEqual(resp.status_code, 200)
 
     def test_placement_api_save(self):
         self.client.force_login(self.regular_user)
@@ -714,7 +724,9 @@ class PacketViewTest(TestCase):
             flow=self.flow, title='Cancel Test', initiated_by=self.admin,
             signer_assignments={self.steps[0].pk: signer},
         )
-        self.client.force_login(self.officer)
+        # Cancel must be performed by the initiator or an assigned signer
+        # — staff role alone no longer grants cross-packet authority.
+        self.client.force_login(self.admin)
         resp = self.client.post(
             reverse('signatures:packet-cancel', kwargs={'pk': packet.pk}),
             {'cancel_reason': 'Changed plans.'},
@@ -724,13 +736,32 @@ class PacketViewTest(TestCase):
         self.assertEqual(packet.status, SigningPacket.Status.CANCELLED)
 
     @patch('keel.signatures.services._notify_signer_active')
+    def test_packet_cancel_blocked_for_unrelated_staff(self, mock_notify):
+        signer = _user('signer2', 'program_officer', self.agency)
+        packet = services.initiate_packet(
+            flow=self.flow, title='Cancel Block Test', initiated_by=self.admin,
+            signer_assignments={self.steps[0].pk: signer},
+        )
+        unrelated = _user('unrelated', 'program_officer', self.agency)
+        self.client.force_login(unrelated)
+        resp = self.client.post(
+            reverse('signatures:packet-cancel', kwargs={'pk': packet.pk}),
+            {'cancel_reason': 'Trying to peek.'},
+        )
+        self.assertEqual(resp.status_code, 403)
+        packet.refresh_from_db()
+        self.assertNotEqual(packet.status, SigningPacket.Status.CANCELLED)
+
+    @patch('keel.signatures.services._notify_signer_active')
     def test_packet_status_api(self, mock_notify):
         signer = _user('signer', 'program_officer', self.agency)
         packet = services.initiate_packet(
             flow=self.flow, title='API Test', initiated_by=self.admin,
             signer_assignments={self.steps[0].pk: signer},
         )
-        self.client.force_login(self.officer)
+        # Status API is scoped to initiator/signer to avoid leaking
+        # progress + signer names by UUID enumeration.
+        self.client.force_login(self.admin)
         resp = self.client.get(
             reverse('signatures:packet-status-api', kwargs={'pk': packet.pk}),
         )
@@ -738,6 +769,20 @@ class PacketViewTest(TestCase):
         data = json.loads(resp.content)
         self.assertEqual(data['status'], 'in_progress')
         self.assertEqual(data['progress']['total'], 1)
+
+    @patch('keel.signatures.services._notify_signer_active')
+    def test_packet_status_api_blocked_for_unrelated_user(self, mock_notify):
+        signer = _user('signer3', 'program_officer', self.agency)
+        packet = services.initiate_packet(
+            flow=self.flow, title='API Block Test', initiated_by=self.admin,
+            signer_assignments={self.steps[0].pk: signer},
+        )
+        unrelated = _user('unrelated2', 'program_officer', self.agency)
+        self.client.force_login(unrelated)
+        resp = self.client.get(
+            reverse('signatures:packet-status-api', kwargs={'pk': packet.pk}),
+        )
+        self.assertEqual(resp.status_code, 403)
 
 
 # ===========================================================================
