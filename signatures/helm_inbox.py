@@ -14,6 +14,12 @@ from keel.feed.views import helm_inbox_view
 from .models import Notification, SigningPacket, SigningStep
 
 
+def _product_url():
+    if getattr(settings, 'DEMO_MODE', False):
+        return 'https://demo-manifest.docklabs.ai'
+    return 'https://manifest.docklabs.ai'
+
+
 @helm_inbox_view
 def manifest_helm_feed_inbox(request, user):
     """Build Manifest's per-user inbox.
@@ -23,7 +29,7 @@ def manifest_helm_feed_inbox(request, user):
 
     Notifications: unread Notification rows for this user.
     """
-    product_url = getattr(settings, 'PRODUCT_URL', '').rstrip('/')
+    product_url = _product_url().rstrip('/')
 
     active_steps = (
         SigningStep.objects
