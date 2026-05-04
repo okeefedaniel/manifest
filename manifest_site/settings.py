@@ -189,6 +189,8 @@ LOGOUT_REDIRECT_URL = '/'
 SITE_ID = 1
 
 AUTHENTICATION_BACKENDS = [
+    # Username-or-email login (matches the shared LoginForm contract).
+    'keel.accounts.backends.UsernameOrEmailBackend',
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
@@ -339,7 +341,7 @@ KEEL_AUDIT_LOG_MODEL = 'signatures.AuditLog'
 KEEL_NOTIFICATION_MODEL = 'signatures.Notification'
 KEEL_NOTIFICATION_PREFERENCE_MODEL = 'signatures.NotificationPreference'
 HELM_FEED_API_KEY = os.environ.get('HELM_FEED_API_KEY', '')
-KEEL_CSP_POLICY = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: https:; connect-src 'self'"  # Start permissive, tighten later
+KEEL_CSP_POLICY = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: https:; connect-src 'self' https://keel.docklabs.ai https://demo-keel.docklabs.ai"  # Start permissive, tighten later
 
 # --- Admin allowlist + trusted-proxy config (keel.security) ---
 # KEEL_ADMIN_ALLOWED_IPS: list of CIDR / IPs allowed to hit /admin/.
